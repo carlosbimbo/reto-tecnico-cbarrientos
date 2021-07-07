@@ -1,0 +1,18 @@
+{
+    "name": "reto-tecnico2021",
+    "version": "1.0.0",
+    "description": "reto tecnico2021",
+    "main": "main.js",
+    "scripts": {
+        "test": "NODE_ENV=tes nodemon --exec 'mocha -R min'"
+    },
+    "author": "Carlos Barrientos Sanchez",
+    "license": "ISC",
+    "dependencies": {
+        "aws-sdk": "^2.795.0",
+        "axios": "^0.21.0",
+        "mocha": "^8.2.1",
+        "serverless-dynamodb-local": "^0.2.39",
+        "uuid": "^8.3.1"
+    }
+}

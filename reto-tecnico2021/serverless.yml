@@ -11,7 +11,7 @@
 #
 # Happy Coding!
 
-service: reto-tecnico-sls
+service: reto-tecnico2021
 # app and org for use with dashboard.serverless.com
 #app: your-app-name
 #org: your-org-name
@@ -20,11 +20,29 @@ service: reto-tecnico-sls
 # Check out our docs for more details
 frameworkVersion: '2'
 
+plugins:
+  - serverless-dynamodb-local
+
 provider:
   name: aws
   runtime: nodejs12.x
-  lambdaHashingVersion: 20201221
-
+  apiGateway:
+    shouldStartNameWithService: true  
+  memorySize: 128 # optional, in MB, default is 1024
+  timeout: 10 # optional, in seconds, default is 6
+  versionFunctions: false # optional, default is true
+  tracing:
+    lambda: true 
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem    
+      Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/personTable"
 # you can overwrite defaults here
 #  stage: dev
 #  region: us-east-1
@@ -51,21 +69,36 @@ provider:
 
 # you can add packaging information here
 #package:
-#  patterns:
-#    - '!exclude-me.js'
-#    - '!exclude-me-dir/**'
+#  include:
 #    - include-me.js
 #    - include-me-dir/**
+#  exclude:
+#    - exclude-me.js
+#    - exclude-me-dir/**
 
 functions:
-  hello:
-    handler: handler.hello
+  sw_create:
+    handler: sw_create.main
+    events:
+      - http:
+          path: sw/create
+          method: post   
+  sw_read:
+    handler: sw_read.main
+    events:
+      - http:
+          path: sw/read/{resource}
+          method: get
+          request:
+            parameters:
+              paths:
+                resource: true
 #    The following are a few example events you can configure
 #    NOTE: Please make sure to change your handler code to work with those events
 #    Check the event documentation for details
 #    events:
-#      - httpApi:
-#          path: /users/create
+#      - http:
+#          path: users/create
 #          method: get
 #      - websocket: $connect
 #      - s3: ${env:BUCKET}
@@ -111,3 +144,33 @@ functions:
 #     NewOutput:
 #       Description: "Description for the output"
 #       Value: "Some output value"
+resources:
+  Resources:
+    personTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: personTable
+        AttributeDefinitions:
+          - AttributeName: persona_uuid
+            AttributeType: S                              
+        KeySchema:
+          - AttributeName: persona_uuid
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+
+custom:
+  dynamodb:
+    stages:
+      - dev
+    start:
+      port: 8000
+      inMemory: true
+      heapInitial: 200m
+      heapMax: 1g
+      migrate: true
+      seed: true
+      convertEmptyValues: true
+    # Uncomment only if you already have a DynamoDB running locally
+    # noStart: true
